@@ -38,7 +38,7 @@ export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
 
   return {
     ...serverData,
-    clientTask: clientTask(),
+    clientTask: await clientTask(),
   }
 }
 clientLoader.hydrate = true
@@ -64,15 +64,9 @@ export default function Index() {
       </Suspense>
       {
         data.clientTask ? (
-          <Suspense fallback={<div>Running client task...</div>}>
-            <Await resolve={data.clientTask} errorElement={"long task error"}>
-              {(clientTask) => 
-                <div>client task result: {JSON.stringify(clientTask)}</div>
-              }
-            </Await>
-          </Suspense>
+          <div>client task result: {JSON.stringify(data.clientTask)}</div>
         ) : (
-          <div>Wait starting client task...</div>
+          <div>Running client task...</div>
         )
       }
     </>
