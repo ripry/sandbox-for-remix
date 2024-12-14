@@ -1,5 +1,5 @@
 import { defer } from "@remix-run/node"
-import { Await, ClientLoaderFunctionArgs, useLoaderData } from "@remix-run/react"
+import { Await, ClientLoaderFunctionArgs, Link, useLoaderData } from "@remix-run/react"
 import { Suspense } from "react"
 
 const sleep = (millis: number) =>  new Promise((resolve) => setTimeout(resolve, millis))
@@ -41,7 +41,6 @@ export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
     clientTask: await clientTask(),
   }
 }
-clientLoader.hydrate = true
 
 export default function Index() {
   const data = useLoaderData<typeof loader>()
@@ -69,6 +68,7 @@ export default function Index() {
           <div>Running client task...</div>
         )
       }
+      <Link to="/">Reload</Link>
     </>
   );
 }
