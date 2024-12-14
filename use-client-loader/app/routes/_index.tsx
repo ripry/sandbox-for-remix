@@ -1,6 +1,6 @@
-import { defer, LoaderFunction } from "@remix-run/node"
-import { Await, ClientLoaderFunction, ClientLoaderFunctionArgs, useLoaderData } from "@remix-run/react"
-import { Suspense, useEffect } from "react"
+import { defer } from "@remix-run/node"
+import { Await, ClientLoaderFunctionArgs, useLoaderData } from "@remix-run/react"
+import { Suspense } from "react"
 
 const sleep = (millis: number) =>  new Promise((resolve) => setTimeout(resolve, millis))
 
@@ -8,10 +8,10 @@ type TaskResult = { ok: boolean, message: string}
 type LoaderData = {
   shortTask: Promise<TaskResult>
   longTask: Promise<TaskResult>
-  clientTask?: TaskResult
+  clientTask?: Promise<TaskResult>
 }
 
-export const loader: LoaderFunction = () => {
+export async function loader() {
   const shortTask = async (): Promise<TaskResult> => {
     await sleep(100)
     return { ok: true, message: "short task completed!" }
@@ -28,29 +28,22 @@ export const loader: LoaderFunction = () => {
   })
 }
 
-export const clientLoader: ClientLoaderFunction = async ({ serverLoader }: ClientLoaderFunctionArgs) => {
+export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const clientTask = async (): Promise<TaskResult> => {
     await sleep(5000)
     return { ok: true, message: "client task completed!" }
   }
 
-  const [serverData, clientData] = await Promise.all([
-    serverLoader<LoaderData>(),
-    clientTask(),
-  ] as const)
+  const serverData = await serverLoader<LoaderData>()
 
   return {
     ...serverData,
-    clientTask: clientData,
+    clientTask: clientTask(),
   }
 }
 
 export default function Index() {
   const data = useLoaderData<typeof loader>()
-
-  useEffect(() => {
-    console.log(data)
-  }, [data.clientTask])
 
   return (
     <>
@@ -68,7 +61,19 @@ export default function Index() {
           }
         </Await>
       </Suspense>
-      <div>client task result: {JSON.stringify(data.clientTask)}</div>
+      {
+        data.clientTask ? (
+          <Suspense fallback={<div>Running client task...</div>}>
+            <Await resolve={data.clientTask} errorElement={"long task error"}>
+              {(clientTask) => 
+                <div>client task result: {JSON.stringify(clientTask)}</div>
+              }
+            </Await>
+          </Suspense>
+        ) : (
+          <div>Wait starting client task...</div>
+        )
+      }
     </>
   );
 }
