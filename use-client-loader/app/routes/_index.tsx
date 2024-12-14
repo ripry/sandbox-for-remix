@@ -41,6 +41,7 @@ export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
     clientTask: clientTask(),
   }
 }
+clientLoader.hydrate = true
 
 export default function Index() {
   const data = useLoaderData<typeof loader>()
